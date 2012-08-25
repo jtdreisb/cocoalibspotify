@@ -43,7 +43,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @property (nonatomic, copy, readwrite) NSURL *spotifyURL;
 @property (nonatomic, readwrite) sp_artist *artist;
 @property (nonatomic, readwrite, getter=isLoaded) BOOL loaded;
-@property (nonatomic, readwrite) __unsafe_unretained SPSession *session;
+@property (nonatomic, readwrite, strong) SPSession *session;
 @end
 
 @implementation SPArtist
