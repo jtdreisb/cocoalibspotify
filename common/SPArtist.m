@@ -43,7 +43,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @property (nonatomic, copy, readwrite) NSURL *spotifyURL;
 @property (nonatomic, readwrite) sp_artist *artist;
 @property (nonatomic, readwrite, getter=isLoaded) BOOL loaded;
-
+@property (nonatomic, readwrite) __unsafe_unretained SPSession *session;
 @end
 
 @implementation SPArtist
@@ -100,6 +100,7 @@ static NSMutableDictionary *artistCache;
 	
     if ((self = [super init])) {
         self.artist = anArtist;
+        self.session = aSession;
         sp_artist_add_ref(self.artist);
         sp_link *link = sp_link_create_from_artist(anArtist);
         if (link != NULL) {
