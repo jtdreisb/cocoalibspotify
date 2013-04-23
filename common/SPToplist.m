@@ -86,9 +86,9 @@ void toplistbrowse_tracks_complete(sp_toplistbrowse *result, void *userdata) {
 		}
 		
 		dispatch_async(dispatch_get_main_queue(), ^{
-			toplist.tracksLoaded = tracksAreLoaded;
 			toplist.loadError = error;
 			toplist.tracks = newTracks;
+			toplist.tracksLoaded = tracksAreLoaded;
 		});
 	}
 }
@@ -120,9 +120,9 @@ void toplistbrowse_artists_complete(sp_toplistbrowse *result, void *userdata) {
 		}
 		
 		dispatch_async(dispatch_get_main_queue(), ^{
-			toplist.artistsLoaded = artistsAreLoaded;
 			toplist.loadError = error;
 			toplist.artists = newArtists;
+			toplist.artistsLoaded = artistsAreLoaded;
 		});
 	}
 }
@@ -154,9 +154,9 @@ void toplistbrowse_albums_complete(sp_toplistbrowse *result, void *userdata) {
 		}
 		
 		dispatch_async(dispatch_get_main_queue(), ^{
-			toplist.albumsLoaded = albumsAreLoaded;
 			toplist.loadError = error;
 			toplist.albums = newAlbums;
+			toplist.albumsLoaded = albumsAreLoaded;
 		});
 	}
 }
@@ -191,7 +191,7 @@ void toplistbrowse_albums_complete(sp_toplistbrowse *result, void *userdata) {
 		self.username = nil;
 		self.session = aSession;
 		
-		dispatch_async([SPSession libSpotifyQueue], ^{
+		SPDispatchAsync(^{
 			
 			sp_toplistregion region = SP_TOPLIST_REGION_EVERYWHERE;
 			
@@ -240,7 +240,7 @@ void toplistbrowse_albums_complete(sp_toplistbrowse *result, void *userdata) {
 		self.username = user;
 		self.session = aSession;
 		
-		dispatch_async([SPSession libSpotifyQueue], ^{
+		SPDispatchAsync(^{
 			
 			sp_toplistregion region = SP_TOPLIST_REGION_USER;
 			
@@ -298,26 +298,26 @@ void toplistbrowse_albums_complete(sp_toplistbrowse *result, void *userdata) {
 
 -(sp_toplistbrowse *)albumBrowseOperation {
 #if DEBUG
-	NSAssert(dispatch_get_current_queue() == [SPSession libSpotifyQueue], @"Not on correct queue!");
+	SPAssertOnLibSpotifyThread();
 #endif
 	return _albumBrowseOperation;
 }
 
 -(sp_toplistbrowse *)artistBrowseOperation {
 #if DEBUG
-	NSAssert(dispatch_get_current_queue() == [SPSession libSpotifyQueue], @"Not on correct queue!");
+	SPAssertOnLibSpotifyThread();
 #endif
 	return _artistBrowseOperation;
 }
 
 -(sp_toplistbrowse *)trackBrowseOperation {
 #if DEBUG
-	NSAssert(dispatch_get_current_queue() == [SPSession libSpotifyQueue], @"Not on correct queue!");
+	SPAssertOnLibSpotifyThread();
 #endif
 	return _trackBrowseOperation;
 }
 
-+(NSSet *)keyPathsForValuesAffectingIsLoaded {
++(NSSet *)keyPathsForValuesAffectingLoaded {
 	return [NSSet setWithObjects:@"tracksLoaded", @"albumsLoaded", @"artistsLoaded", nil];
 }
 
@@ -334,7 +334,7 @@ void toplistbrowse_albums_complete(sp_toplistbrowse *result, void *userdata) {
 	sp_toplistbrowse *outgoing_trackbrowse = _trackBrowseOperation;
 	_trackBrowseOperation = NULL;
 	
-	dispatch_async([SPSession libSpotifyQueue], ^() {
+	SPDispatchAsync(^() {
 		if (outgoing_artistbrowse) sp_toplistbrowse_release(outgoing_artistbrowse);
 		if (outgoing_albumbrowse) sp_toplistbrowse_release(outgoing_albumbrowse);
 		if (outgoing_trackbrowse) sp_toplistbrowse_release(outgoing_trackbrowse);

@@ -76,7 +76,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -(void)updateAlbumBrowseSpecificMembers {
 	
-	NSAssert(dispatch_get_current_queue() == [SPSession libSpotifyQueue], @"Not on correct queue!");
+	SPAssertOnLibSpotifyThread();
 	
 	self.discNumber = sp_track_disc(self.track);
 	self.trackNumber = sp_track_index(self.track);
@@ -87,7 +87,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @implementation SPTrack
 
 +(SPTrack *)trackForTrackStruct:(sp_track *)spTrack inSession:(SPSession *)aSession{
-	NSAssert(dispatch_get_current_queue() == [SPSession libSpotifyQueue], @"Not on correct queue!");
+	SPAssertOnLibSpotifyThread();
     return [aSession trackForTrackStruct:spTrack];
 }
 
@@ -97,7 +97,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -(id)initWithTrackStruct:(sp_track *)tr inSession:(SPSession *)aSession {
 	
-	NSAssert(dispatch_get_current_queue() == [SPSession libSpotifyQueue], @"Not on correct queue!");
+	SPAssertOnLibSpotifyThread();
 
     if ((self = [super init])) {
         self.session = aSession;
@@ -109,6 +109,11 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         } else {
             [self loadTrackData];
         }
+
+		[[NSNotificationCenter defaultCenter] addObserver:self
+												 selector:@selector(sessionUpdatedMetadata:)
+													 name:SPSessionDidUpdateMetadataNotification
+												   object:self.session];
     }   
     return self;
 }
@@ -119,7 +124,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          
 -(BOOL)checkLoaded {
 	
-	NSAssert(dispatch_get_current_queue() == [SPSession libSpotifyQueue], @"Not on correct queue!");
+	SPAssertOnLibSpotifyThread();
 	
 	BOOL isLoaded = sp_track_is_loaded(self.track);
 	
@@ -131,7 +136,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -(void)loadTrackData {
 	
-	NSAssert(dispatch_get_current_queue() == [SPSession libSpotifyQueue], @"Not on correct queue!");
+	SPAssertOnLibSpotifyThread();
 	
 	NSURL *trackURL = nil;
 	SPAlbum *newAlbum = nil;
@@ -199,6 +204,26 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	});
 }
 
+-(void)sessionUpdatedMetadata:(NSNotification *)notification {
+
+	SPDispatchAsync(^{
+
+		BOOL newLocal = sp_track_is_local(self.session.session, self.track);
+		NSUInteger newPopularity = sp_track_popularity(self.track);
+		sp_track_availability newAvailability = sp_track_get_availability(self.session.session, self.track);
+		sp_track_offline_status newOfflineStatus = sp_track_offline_get_status(self.track);
+		BOOL newStarred = sp_track_is_starred(self.session.session, self.track);
+
+		dispatch_async(dispatch_get_main_queue(), ^{
+			if (self.isLocal != newLocal) self.local = newLocal;
+			if (self.popularity != newPopularity) self.popularity = newPopularity;
+			if (self.availability != newAvailability) self.availability = newAvailability;
+			if (self.offlineStatus != newOfflineStatus) self.offlineStatus = newOfflineStatus;
+			if (self.starred != newStarred) [self setStarredFromLibSpotifyUpdate:newStarred];
+		});
+	});
+}
+
 -(void)albumBrowseDidLoad {
 	if (self.track) self.discNumber = sp_track_disc(self.track);
 }
@@ -235,7 +260,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -(sp_track *)track {
 #if DEBUG
-	NSAssert(dispatch_get_current_queue() == [SPSession libSpotifyQueue], @"Not on correct queue!");
+	SPAssertOnLibSpotifyThread();
 #endif 
 	return _track;
 }
@@ -255,7 +280,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
 
 -(void)setStarred:(BOOL)starred {
-    dispatch_async([SPSession libSpotifyQueue], ^() {
+    SPDispatchAsync(^() {
 		sp_track *track = self.track;
 		sp_track_set_starred([session session], (sp_track *const *)&track, 1, starred);
 	});
@@ -263,9 +288,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
 
 -(void)dealloc {
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	sp_track *outgoing_track = _track;
 	_track = NULL;
-    dispatch_async([SPSession libSpotifyQueue], ^() { if (outgoing_track) sp_track_release(outgoing_track); });
+    SPDispatchAsync(^() { if (outgoing_track) sp_track_release(outgoing_track); });
     session = nil;
 }
 

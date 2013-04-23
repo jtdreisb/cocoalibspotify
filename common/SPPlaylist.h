@@ -73,7 +73,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /** Initializes an SPPlaylist from the given opaque sp_playlist struct. 
  
- @warning This method *must* be called on the libSpotify queue. See the
+ @warning This method *must* be called on the libSpotify thread. See the
  "Threading" section of the library's readme for more information.
  
  @warning For better performance and built-in caching, it is recommended
@@ -135,7 +135,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /** Returns the opaque structure used by the C LibSpotify API. 
  
- @warning This method *must* be called on the libSpotify queue. See the
+ @warning This method *must* be called on the libSpotify thread. See the
  "Threading" section of the library's readme for more information.
  
  @warning This should only be used if you plan to directly use the 
@@ -171,7 +171,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///----------------------------
 
 /** Returns an array of SPPlaylistItem objects representing playlist's item order. */
-@property (nonatomic, readonly, copy) NSArray *items;
+@property (atomic, readonly, copy) NSArray *items;
 
 /** Move item(s) to another location in the list. 
  
@@ -298,5 +298,21 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  @param newIndexes The now current indexes of the items.
  */
 -(void)playlist:(SPPlaylist *)aPlaylist didMoveItems:(NSArray *)items atIndexes:(NSIndexSet *)oldIndexes toIndexes:(NSIndexSet *)newIndexes;
+
+///----------------------------
+/// @name Other Changes
+///----------------------------
+
+/** Called before a change that isn't a simple add, remove or move operation to the items in the playlist.
+
+ @param aPlaylist The playlist in which items will be changed.
+ */
+-(void)playlistWillChangeItems:(SPPlaylist *)aPlaylist;
+
+/** Called after a change that isn't a simple add, remove or move operation to the items in the playlist.
+
+ @param aPlaylist The playlist in which items will be changed.
+ */
+-(void)playlistDidChangeItems:(SPPlaylist *)aPlaylist;
 
 @end

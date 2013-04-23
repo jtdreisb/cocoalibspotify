@@ -49,7 +49,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /** Returns the opaque structure used by the C LibSpotify API. 
  
- @warning This method *must* be called on the libSpotify queue. See the
+ @warning This method *must* be called on the libSpotify thread. See the
  "Threading" section of the library's readme for more information.
  
  @warning This should only be used if you plan to directly use the 
@@ -115,5 +115,16 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		toIndex:(NSUInteger)newIndex 
 	ofNewParent:(SPPlaylistFolder *)aParentFolderOrNil
 	   callback:(SPErrorableOperationCallback)block;
+
+/** Subscribe to the given playlist.
+
+ The operation will fail if the given playlist is owned by the current user or is 
+ already subscribed (i.e., you can't subscribe to a playlist twice). To unsubscibe,
+ user `-[SPPlaylistContainer removeItem:callback:]`.
+
+ @param playlist The Playlist to subscribe to.
+ @param block The callback block to execute when the operation has completed.
+ */
+-(void)subscribeToPlaylist:(SPPlaylist *)playlist callback:(SPErrorableOperationCallback)block;
 
 @end
